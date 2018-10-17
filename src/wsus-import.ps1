@@ -1,9 +1,11 @@
-$wsus_sync = "path-to-wsus-sync.ps1"
-$sync_dir = "path-to-sync-dir"
-$wsus_approve = "path-to-wsus-approve.ps1"
+Param (
+    [string]$WsusSync = "$PSScriptRoot/wsus-sync.ps1",
+    [string]$SyncDir,
+    [string]$WsusApprove = "$PSScriptRoot/wsus-approve.ps1"
+)
 
-& $wsus_sync -Mode import -SyncDir $sync_dir
+& $WsusSync -Mode import -SyncDir $SyncDir
 
 if ($LASTEXITCODE -ne 0) {
-    & $wsus_approve -Sync:$false
+    & $WsusApprove -Sync:$false
 }
