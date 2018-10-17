@@ -1,7 +1,7 @@
 Param (
-    [string]$WsusSync = "$PSScriptRoot/wsus-sync.ps1",
+    [string]$WsusSync = "$PSScriptRoot\wsus-sync.ps1",
     [string]$SyncDir,
-    [string]$WsusApprove = "$PSScriptRoot/wsus-approve.ps1"
+    [string]$WsusApprove = "$PSScriptRoot\wsus-approve.ps1"
 )
 
 & $WsusSync -Mode import -SyncDir $SyncDir
