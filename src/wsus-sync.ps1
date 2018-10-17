@@ -12,11 +12,6 @@ function output_log ($text) {
     Write-Output $text | Out-File -Append $logfile
 }
 
-function get_script_dir {
-    $invocation = (Get-Variable MyInvocation -Scope 1).Value
-    Split-Path $invocation.MyCommand.Path
-}
-
 function create_dir ($directory) {
     if (-Not (Test-Path $directory)) {
         New-Item -Path $directory -ItemType directory | Out-Null
@@ -64,11 +59,10 @@ function import_sync ($src, $dst) {
 # Run
 #
 
-$syncroot = (Get-Item $(get_script_dir)).Parent.FullName
-$logdir = $($syncroot + "\logs\")
-$logfile = $($logdir + "\file_sync.log")
-$lastsync = $($SyncDir + "\lastsync")
-$syncing = $($SyncDir + "\syncing")
+$logdir = "$PSScriptRoot\logs\"
+$logfile = "$logdir\file_sync.log"
+$lastsync = "$SyncDir\lastsync"
+$syncing = "$SyncDir\syncing"
 
 create_dir $logdir
 
@@ -109,7 +103,7 @@ if ($Mode -eq "export") {
     }
 
     $lastsync_time = Get-Date -Date $(Get-Content $lastsync)
-    $lastimport = $($syncroot + "\lastimport")
+    $lastimport = "$PSScriptRoot\lastimport"
 
     if (Test-Path $lastimport) {
         $lastimport_time = Get-Date -Date $(Get-Content $lastimport)
