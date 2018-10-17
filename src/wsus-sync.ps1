@@ -5,7 +5,7 @@ param (
 )
 
 $wsusutil = "C:\Program Files\Update Services\Tools\WsusUtil.exe"
-$exportfile = $($WSUSDir + "\export.xml.gz")
+$exportfile = "$WSUSDir\export.xml.gz"
 
 
 function output_log ($text) {
@@ -27,14 +27,14 @@ function store_timestamp ($file) {
 }
 
 function wsus_export ($exportfile) {
-    & $wsusutil export $exportfile $($logdir + "\wsus_export.log")
+    & $wsusutil export $exportfile "$logdir\wsus_export.log"
     if (-Not ($?)) {
         exit $LASTEXITCODE
     }
 }
 
 function wsus_import ($exportfile) {
-    & $wsusutil import $exportfile $($logdir + "\wsus_import.log")
+    & $wsusutil import $exportfile "$logdir\wsus_import.log"
     if (-Not ($?)) {
         exit $LASTEXITCODE
     }
