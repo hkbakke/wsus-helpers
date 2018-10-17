@@ -37,7 +37,7 @@ If ($Sync) {
 # Wait for any currently running synchronization jobs to finish before continuing
 While ($subscription.GetSynchronizationStatus() -ne "NotProcessing") {
 	Write-Host "Waiting for synchronization to finish..."
-    Start-Sleep -s 3
+    Start-Sleep -s 10
 }
 
 # Ensure decline rules are processed first!
