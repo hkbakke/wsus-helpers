@@ -4,7 +4,7 @@ Param (
     [string]$WsusServer = 'wsus',
     [int]$Port = 8530,
     [bool]$UseSSL = $False,
-    [bool]$Sync = $True
+    [bool]$NoSync = $False
 )
 
 # Do not add upgrades here. They are currently handled manually for more control
@@ -27,7 +27,7 @@ $wsus = [Microsoft.UpdateServices.Administration.AdminProxy]::GetUpdateServer($W
 $group = $wsus.GetComputerTargetGroups() | Where-Object {$_.Name -eq $auto_approve_group}
 $subscription = $wsus.GetSubscription()
 
-If ($Sync) {
+If (-Not $NoSync) {
     If ($subscription.GetSynchronizationStatus() -eq "NotProcessing") {
         Write-Host "Starting synchronization..."
         $subscription.StartSynchronization()
