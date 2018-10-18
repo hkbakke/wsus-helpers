@@ -9,9 +9,9 @@ $wsus = [Microsoft.UpdateServices.Administration.AdminProxy]::GetUpdateServer($W
 
 $updates = $wsus.GetUpdates() | Where-Object {-Not $_.IsDeclined}
 $updates | Foreach-Object {
-    # Delete updates with missing files. If the update still exists in the source WSUS it will be readded
+    # Delete updates with missing files. If the update still exists in the source WSUS it should be readded
     # during the next import. This should hopefully fix any inconstencies as long as the WSUS server on the
-    # import side do not approve updates not approved on the export server.
+    # import side does not approve any updates that is not approved on the export server.
     If ($_.State -eq "NotReady") {
         Write-Host "Removing $($_.Title)"
         $wsus.DeleteUpdate($_.Id.UpdateId.ToString())
