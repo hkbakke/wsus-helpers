@@ -5,7 +5,8 @@ Param (
     [int]$Port = 8530,
     [bool]$UseSSL = $False,
     [bool]$NoSync = $False,
-    [bool]$Reset = $False
+    [bool]$Reset = $False,
+    [bool]$DryRun = $False
 )
 
 # Do not add upgrades here. They are currently handled manually for more control
@@ -51,27 +52,28 @@ $updates | Foreach-Object {
     # Ensure decline rules are processed first!
     If ($_.Title -Match 'ia64|itanium') {
         Write-Host "Declining $($_.Title) [itanium]"
-        $_.Decline()
+        If (-Not $DryRun) { $_.Decline() }
     } Elseif ($_.Title -Match 'arm64') {
         Write-Host "Declining $($_.Title) [arm]"
-        $_.Decline()
+        If (-Not $DryRun) { $_.Decline() }
     } Elseif ($_.Title -Match 'preview') {
         Write-Host "Declining $($_.Title) [preview]"
-        $_.Decline()
+        If (-Not $DryRun) { $_.Decline() }
     } Elseif ($_.IsBeta) {
         Write-Host "Declining $($_.Title) [beta]"
-        $_.Decline()		
+        If (-Not $DryRun) { $_.Decline() }
     } Elseif ($_.IsSuperseded) {
         Write-Host "Declining $($_.Title) [superseded]"
-        $_.Decline()
+        If (-Not $DryRun) { $_.Decline() }
     } Elseif (-Not $_.IsApproved) {
         If ($auto_approve_classifications.Contains($_.UpdateClassificationTitle)) {
             If ($_.RequiresLicenseAgreementAcceptance) {
-                $_.AcceptLicenseAgreement()
+                Write-Host "Accepting license agreement for $($_.Title)"
+                If (-Not $DryRun) { $_.AcceptLicenseAgreement() }
             }
 
             Write-Host "Approving $($_.Title)"
-            $_.Approve("Install", $group)
+            If (-Not $DryRun) { $_.Approve("Install", $group) }
         }
     }
 }
