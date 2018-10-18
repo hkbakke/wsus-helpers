@@ -6,6 +6,6 @@ Param (
 
 & $WsusSync -Mode import -SyncDir $SyncDir
 
-if ($LASTEXITCODE -ne 0) {
+if ($LASTEXITCODE -eq 0) {
     & $WsusApprove -Sync:$false
 }
