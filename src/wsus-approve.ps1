@@ -4,7 +4,8 @@ Param (
     [string]$WsusServer = 'wsus',
     [int]$Port = 8530,
     [bool]$UseSSL = $False,
-    [bool]$NoSync = $False
+    [bool]$NoSync = $False,
+    [bool]$Reset = $False
 )
 
 # Do not add upgrades here. They are currently handled manually for more control
@@ -40,9 +41,14 @@ While ($subscription.GetSynchronizationStatus() -ne "NotProcessing") {
     Start-Sleep -s 10
 }
 
-# Ensure decline rules are processed first!
-$updates = $wsus.GetUpdates() | Where-Object {-Not $_.IsDeclined}
+If ($Reset) {
+    $updates = $wsus.GetUpdates()
+} Else {
+    $updates = $wsus.GetUpdates() | Where-Object {-Not $_.IsDeclined}
+}
+
 $updates | Foreach-Object {
+    # Ensure decline rules are processed first!
     If ($_.Title -Match 'ia64|itanium') {
         Write-Host "Declining $($_.Title) [itanium]"
         $_.Decline()
