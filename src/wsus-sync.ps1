@@ -48,7 +48,11 @@ function export_sync ($src, $dst) {
 }
 
 function import_sync ($src, $dst) {
-    & robocopy $src $dst /UNILOG+:$logfile /TEE /NP /MIR /R:5 /W:60 /XD UpdateServicesPackages
+    # Do not use /MIR or /PURGE to delete files in destination WSUS folder that does
+    # not exist in the source, as there may be approved updates in the destination WSUS that
+    # will get angry and add bitstransfer jobs if the files suddenly disappears. Use
+    # maintenance jobs to keep destination server tidy as you would usually do
+    & robocopy $src $dst /UNILOG+:$logfile /TEE /NP /E /R:5 /W:60 /XD UpdateServicesPackages
     if ($LASTEXITCODE -gt 8) {
         exit $LASTEXITCODE
     }
