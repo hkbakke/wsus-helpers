@@ -1,7 +1,7 @@
 Param (
     [string]$WsusServer = 'wsus',
     [int]$Port = 8530,
-    [bool]$UseSSL = $False
+    [switch]$UseSSL
 )
 
 [reflection.assembly]::LoadWithPartialName("Microsoft.UpdateServices.Administration") | Out-Null
@@ -13,7 +13,7 @@ $updates | Foreach-Object {
     # during the next import. This should hopefully fix any inconstencies as long as the WSUS server on the
     # import side does not approve any updates that is not approved on the export server.
     If ($_.State -eq "NotReady") {
-        Write-Host "Removing $($_.Title)"
+        Write-Output "Removing $($_.Title)"
         $wsus.DeleteUpdate($_.Id.UpdateId.ToString())
     }
 }

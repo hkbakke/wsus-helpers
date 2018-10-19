@@ -3,10 +3,10 @@
 Param (
     [string]$WsusServer = 'wsus',
     [int]$Port = 8530,
-    [bool]$UseSSL = $False,
-    [bool]$NoSync = $False,
-    [bool]$Reset = $False,
-    [bool]$DryRun = $False
+    [switch]$UseSSL,
+    [switch]$NoSync,
+    [switch]$Reset,
+    [switch]$DryRun
 )
 
 # Do not add upgrades here. They are currently handled manually for more control
@@ -31,14 +31,14 @@ $subscription = $wsus.GetSubscription()
 
 If (-Not $NoSync) {
     If ($subscription.GetSynchronizationStatus() -eq "NotProcessing") {
-        Write-Host "Starting synchronization..."
+        Write-Output "Starting synchronization..."
         $subscription.StartSynchronization()
     }
 }
 
 # Wait for any currently running synchronization jobs to finish before continuing
 While ($subscription.GetSynchronizationStatus() -ne "NotProcessing") {
-    Write-Host "Waiting for synchronization to finish..."
+    Write-Output "Waiting for synchronization to finish..."
     Start-Sleep -s 10
 }
 
@@ -51,28 +51,28 @@ If ($Reset) {
 $updates | Foreach-Object {
     # Ensure decline rules are processed first!
     If ($_.Title -Match 'ia64|itanium') {
-        Write-Host "Declining $($_.Title) [itanium]"
+        Write-Output "Declining $($_.Title) [itanium]"
         If (-Not $DryRun) { $_.Decline() }
     } Elseif ($_.Title -Match 'arm64') {
-        Write-Host "Declining $($_.Title) [arm]"
+        Write-Output "Declining $($_.Title) [arm]"
         If (-Not $DryRun) { $_.Decline() }
     } Elseif ($_.Title -Match 'preview') {
-        Write-Host "Declining $($_.Title) [preview]"
+        Write-Output "Declining $($_.Title) [preview]"
         If (-Not $DryRun) { $_.Decline() }
     } Elseif ($_.IsBeta) {
-        Write-Host "Declining $($_.Title) [beta]"
+        Write-Output "Declining $($_.Title) [beta]"
         If (-Not $DryRun) { $_.Decline() }
     } Elseif ($_.IsSuperseded) {
-        Write-Host "Declining $($_.Title) [superseded]"
+        Write-Output "Declining $($_.Title) [superseded]"
         If (-Not $DryRun) { $_.Decline() }
     } Elseif (-Not $_.IsApproved) {
         If ($auto_approve_classifications.Contains($_.UpdateClassificationTitle)) {
             If ($_.RequiresLicenseAgreementAcceptance) {
-                Write-Host "Accepting license agreement for $($_.Title)"
+                Write-Output "Accepting license agreement for $($_.Title)"
                 If (-Not $DryRun) { $_.AcceptLicenseAgreement() }
             }
 
-            Write-Host "Approving $($_.Title)"
+            Write-Output "Approving $($_.Title)"
             If (-Not $DryRun) { $_.Approve("Install", $group) }
         }
     }
