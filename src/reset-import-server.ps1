@@ -1,7 +1,8 @@
 Param (
     [string]$WsusServer = 'wsus',
     [int]$Port = 8530,
-    [switch]$UseSSL
+    [switch]$UseSSL,
+    [switch]$DryRun
 )
 
 [reflection.assembly]::LoadWithPartialName("Microsoft.UpdateServices.Administration") | Out-Null
@@ -14,6 +15,9 @@ $updates | Foreach-Object {
     # import side does not approve any updates that is not approved on the export server.
     If ($_.State -eq "NotReady") {
         Write-Output "Removing $($_.Title)"
-        $wsus.DeleteUpdate($_.Id.UpdateId.ToString())
+        If (-Not $DryRun) {
+            $_.Decline()
+            $wsus.DeleteUpdate($_.Id.UpdateId.ToString())
+        }
     }
 }
