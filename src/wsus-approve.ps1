@@ -50,7 +50,7 @@ If ($Reset) {
 
 $updates | Foreach-Object {
     # Ensure decline rules are processed first!
-    If ($_.Title -Match 'ia64|itanium') {
+    If ($_.Title -Match 'ia64|itanium' -Or $_.LegacyName -Match 'ia64|itanium') {
         Write-Output "Declining $($_.Title) [itanium]"
         If (-Not $DryRun) { $_.Decline() }
     } Elseif ($_.Title -Match 'arm64') {
@@ -59,7 +59,7 @@ $updates | Foreach-Object {
     } Elseif ($_.Title -Match 'preview') {
         Write-Output "Declining $($_.Title) [preview]"
         If (-Not $DryRun) { $_.Decline() }
-    } Elseif ($_.IsBeta) {
+    } Elseif ($_.IsBeta -Or $_.LegacyName -Match 'beta') {
         Write-Output "Declining $($_.Title) [beta]"
         If (-Not $DryRun) { $_.Decline() }
     } Elseif ($_.IsSuperseded) {
