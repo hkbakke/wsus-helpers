@@ -11,6 +11,7 @@ Allows for more complex approval rules than the ones in WSUS GUI. By default it 
 * ARM updates
 * Beta updates
 * Preview updates
+* Expired updates
 * Superseded updates
 
 It approves all other updates automatically for "All Computers" group with the exception of "Upgrades" category, which is left for manual approval.
