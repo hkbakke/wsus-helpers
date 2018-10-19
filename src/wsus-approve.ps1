@@ -59,7 +59,7 @@ $updates | Foreach-Object {
     } Elseif ($_.Title -Match 'preview') {
         Write-Output "Declining $($_.Title) [preview]"
         If (-Not $DryRun) { $_.Decline() }
-    } Elseif ($_.IsBeta -Or $_.LegacyName -Match 'beta') {
+    } Elseif ($_.IsBeta -Or $_.Title -Match 'beta') {
         Write-Output "Declining $($_.Title) [beta]"
         If (-Not $DryRun) { $_.Decline() }
     } Elseif ($_.IsSuperseded) {
