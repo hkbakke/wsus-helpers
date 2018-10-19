@@ -65,6 +65,9 @@ $updates | Foreach-Object {
     } Elseif ($_.IsSuperseded) {
         Write-Output "Declining $($_.Title) [superseded]"
         If (-Not $DryRun) { $_.Decline() }
+    } Elseif ($_.PublicationState -eq "Expired") {
+        Write-Output "Declining $($_.Title) [expired]"
+        If (-Not $DryRun) { $_.Decline() }
     } Elseif (-Not $_.IsApproved) {
         If ($auto_approve_classifications.Contains($_.UpdateClassificationTitle)) {
             If ($_.RequiresLicenseAgreementAcceptance) {
