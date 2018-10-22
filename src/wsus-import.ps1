@@ -1,4 +1,4 @@
-Param (
+param (
     [string]$WsusSync = "$PSScriptRoot\wsus-sync.ps1",
     [string]$SyncDir,
     [string]$WsusApprove = "$PSScriptRoot\wsus-approve.ps1"
