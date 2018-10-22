@@ -1,6 +1,6 @@
 # Use instead of approval rules as the approval rule system is too limited
 
-Param (
+param (
     [string]$WsusServer = 'wsus',
     [int]$Port = 8530,
     [switch]$UseSSL,
@@ -29,54 +29,64 @@ $wsus = [Microsoft.UpdateServices.Administration.AdminProxy]::GetUpdateServer($W
 $group = $wsus.GetComputerTargetGroups() | Where-Object {$_.Name -eq $auto_approve_group}
 $subscription = $wsus.GetSubscription()
 
-If (-Not $NoSync) {
-    If ($subscription.GetSynchronizationStatus() -eq "NotProcessing") {
+if (-not $NoSync) {
+    if ($subscription.GetSynchronizationStatus() -eq "NotProcessing") {
         Write-Output "Starting synchronization..."
         $subscription.StartSynchronization()
     }
 }
 
 # Wait for any currently running synchronization jobs to finish before continuing
-While ($subscription.GetSynchronizationStatus() -ne "NotProcessing") {
+while ($subscription.GetSynchronizationStatus() -ne "NotProcessing") {
     Write-Output "Waiting for synchronization to finish..."
     Start-Sleep -s 10
 }
 
-If ($Reset) {
+if ($Reset) {
     $updates = $wsus.GetUpdates()
-} Else {
-    $updates = $wsus.GetUpdates() | Where-Object {-Not $_.IsDeclined}
+} else {
+    $updates = $wsus.GetUpdates() | Where-Object {-not $_.IsDeclined}
 }
 
 $updates | Foreach-Object {
-    # Ensure decline rules are processed first!
-    If ($_.Title -Match 'ia64|itanium' -Or $_.LegacyName -Match 'ia64|itanium') {
+    if ($_.Title -Match 'ia64|itanium' -or $_.LegacyName -Match 'ia64|itanium') {
         Write-Output "Declining $($_.Title) [itanium]"
-        If (-Not $DryRun) { $_.Decline() }
-    } Elseif ($_.Title -Match 'arm64') {
+        if (-not $DryRun) { $_.Decline() }
+    } elseif ($_.Title -Match 'arm64') {
         Write-Output "Declining $($_.Title) [arm]"
-        If (-Not $DryRun) { $_.Decline() }
-    } Elseif ($_.Title -Match 'preview') {
+        if (-not $DryRun) { $_.Decline() }
+    } elseif ($_.Title -Match 'preview') {
         Write-Output "Declining $($_.Title) [preview]"
-        If (-Not $DryRun) { $_.Decline() }
-    } Elseif ($_.IsBeta -Or $_.Title -Match 'beta') {
+        if (-not $DryRun) { $_.Decline() }
+    } elseif ($_.IsBeta -or $_.Title -Match 'beta') {
         Write-Output "Declining $($_.Title) [beta]"
-        If (-Not $DryRun) { $_.Decline() }
-    } Elseif ($_.IsSuperseded) {
-        Write-Output "Declining $($_.Title) [superseded]"
-        If (-Not $DryRun) { $_.Decline() }
-    } Elseif ($_.PublicationState -eq "Expired") {
-        Write-Output "Declining $($_.Title) [expired]"
-        If (-Not $DryRun) { $_.Decline() }
-    } Elseif (-Not $_.IsApproved) {
-        If ($auto_approve_classifications.Contains($_.UpdateClassificationTitle)) {
-            If ($_.RequiresLicenseAgreementAcceptance) {
+        if (-not $DryRun) { $_.Decline() }
+    } elseif ($_.IsSuperseded -or $_.PublicationState -eq "Expired") {
+        # Handle superseded and expired packages after any new updates have been approved
+        return
+    } elseif (-not $_.IsApproved) {
+        if ($auto_approve_classifications.Contains($_.UpdateClassificationTitle)) {
+            if ($_.RequiresLicenseAgreementAcceptance) {
                 Write-Output "Accepting license agreement for $($_.Title)"
-                If (-Not $DryRun) { $_.AcceptLicenseAgreement() }
+                if (-not $DryRun) { $_.AcceptLicenseAgreement() }
             }
 
             Write-Output "Approving $($_.Title)"
-            If (-Not $DryRun) { $_.Approve("Install", $group) }
+            if (-not $DryRun) { $_.Approve("Install", $group) }
         }
+    }
+}
+
+# After any new superseding updates have been approved above, superseded and expired updates
+# can be declined. We need to handle both here as it seems like superseded updates are also
+# marked expired, but some updates are just expired without being superseded.
+$updates = $wsus.GetUpdates() | Where-Object {-not $_.IsDeclined}
+$updates | Foreach-Object {
+    if ($_.IsSuperseded) {
+        Write-Output "Declining $($_.Title) [superseded]"
+        if (-not $DryRun) { $_.Decline() }
+    } elseif ($_.IsSuperseded -or $_.PublicationState -eq "Expired") {
+        Write-Output "Declining $($_.Title) [expired]"
+        if (-not $DryRun) { $_.Decline() }
     }
 }
