@@ -16,7 +16,7 @@ Allows for more complex approval rules than the ones in WSUS GUI. By default it 
 
 It approves all other updates automatically for "All Computers" group with the exception of "Upgrades" category, which is left for manual approval.
 
-For your own sanity you should remove all approval rules and disable automatic sync in WSUS before using this script to handle syncs and approvals.
+For your own sanity you should remove all approval rules, unselect all advanced approval options and disable automatic sync in WSUS before using this script to handle syncs and approvals.
 
 ## wsus-import
 Wrapper for wsus-sync to run wsus-approve automatically after wsus-sync import as it only makes sense to check for new updates after an import for offline servers

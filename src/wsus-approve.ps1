@@ -1,7 +1,7 @@
 # Use instead of approval rules as the approval rule system is too limited
 
 param (
-    [string]$WsusServer = 'wsus',
+    [string]$WsusServer = "localhost",
     [int]$Port = 8530,
     [switch]$UseSSL,
     [switch]$NoSync,
@@ -10,7 +10,7 @@ param (
 )
 
 # Do not add upgrades here. They are currently handled manually for more control
-$auto_approve_classifications = @(
+$approve_classifications = @(
     "Critical Updates",
     "Definition Updates",
     "Drivers",
@@ -21,12 +21,12 @@ $auto_approve_classifications = @(
     "Update Rollups",
     "Updates"
 )
-$auto_approve_group = "All Computers"
+$approve_group = "All Computers"
 
 
 [reflection.assembly]::LoadWithPartialName("Microsoft.UpdateServices.Administration") | Out-Null
 $wsus = [Microsoft.UpdateServices.Administration.AdminProxy]::GetUpdateServer($WsusServer, $UseSSL, $Port)
-$group = $wsus.GetComputerTargetGroups() | Where-Object {$_.Name -eq $auto_approve_group}
+$group = $wsus.GetComputerTargetGroups() | Where-Object {$_.Name -eq $approve_group}
 $subscription = $wsus.GetSubscription()
 
 if (-not $NoSync) {
@@ -65,7 +65,7 @@ $updates | Foreach-Object {
         # Handle superseded and expired packages after any new updates have been approved
         return
     } elseif (-not $_.IsApproved) {
-        if ($auto_approve_classifications.Contains($_.UpdateClassificationTitle)) {
+        if ($_.IsWsusInfrastructureUpdate -or $approve_classifications.Contains($_.UpdateClassificationTitle)) {
             if ($_.RequiresLicenseAgreementAcceptance) {
                 Write-Output "Accepting license agreement for $($_.Title)"
                 if (-not $DryRun) { $_.AcceptLicenseAgreement() }
