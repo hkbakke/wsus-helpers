@@ -1,5 +1,5 @@
 # wsus-helpers
-Helper scripts for WSUS management
+Helper scripts for WSUS sync and maintenance
 
 ## wsus-approve
 Allows for more complex approval rules than the ones in WSUS GUI. By default it declines the following updates automatically:
