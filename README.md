@@ -27,7 +27,7 @@ WSUS database maintenance script. The script has three modes
 
     # Reindex, run the built-in WSUS maintenance jobs and delete declined updates
     wsus-maintenance.ps1 -Full
-
+    
 ## Scheduling recommendations
 Create a daily task that runs these actions
 1. wsus-approve.ps1
@@ -44,5 +44,5 @@ File based sync to servers without direct internet connectivity
 Wrapper for wsus-sync to run wsus-approve automatically after wsus-sync import as it only makes sense to check for new updates after an import for offline servers
 
 # Credits
-[CreateWsusIndexes.sql]: https://support.microsoft.com/en-us/help/4490644/complete-guide-to-microsoft-wsus-and-configuration-manager-sup-maint
-[WsusDBMaintenance.sql]: https://gallery.technet.microsoft.com/scriptcenter/6f8cde49-5c52-4abd-9820-f1d270ddea61
+* CreateWsusIndexes.sql: https://support.microsoft.com/en-us/help/4490644/complete-guide-to-microsoft-wsus-and-configuration-manager-sup-maint
+* WsusDBMaintenance.sql: https://gallery.technet.microsoft.com/scriptcenter/6f8cde49-5c52-4abd-9820-f1d270ddea61
