@@ -7,6 +7,9 @@ param (
 $wsusutil = "C:\Program Files\Update Services\Tools\WsusUtil.exe"
 $exportfile = "$WSUSDir\export.xml.gz"
 
+[reflection.assembly]::LoadWithPartialName("Microsoft.UpdateServices.Administration") | Out-Null
+$wsus = [Microsoft.UpdateServices.Administration.AdminProxy]::GetUpdateServer("localhost", $false, 8530)
+$subscription = $wsus.GetSubscription()
 
 function output_log ($text) {
     Write-Output $text | Out-File -Append $logfile
@@ -83,10 +86,24 @@ if ($Mode -eq "export") {
         output_log "Could not write syncing file $syncing"
         exit $LASTEXITCODE
     }
-    
+
+    # Wait for any currently running synchronization jobs to finish before continuing
+    while ($subscription.GetSynchronizationStatus() -ne "NotProcessing") {
+        output_log "Waiting for synchronization to finish..."
+        Start-Sleep -s 10
+    }
+
+    # Wait for any currently running downloads to complete before continuing
+    while ($wsus.GetContentDownloadProgress().TotalBytesToDownload -gt 0) {
+        $total = $wsus.GetContentDownloadProgress().TotalBytesToDownload
+        $downloaded = $wsus.GetContentDownloadProgress().DownloadedBytes
+        output_log "Waiting for downloads to finish. Progress: $([math]::Round($downloaded / $total * 100))%"
+        Start-Sleep -s 10
+    }
+
     # Export Wsus database
     wsus_export $exportfile
-    
+
     # Sync WSUS content to syncdir
     export_sync $WSUSDir $SyncDir
 
@@ -117,12 +134,15 @@ if ($Mode -eq "export") {
         }
     }
 
+    # Cancel any currently running downloads, as the import will provide the WSUS content
+    $wsus.CancelAllDownloads()
+
     # Sync syncdir to WSUS content dir
     import_sync $SyncDir $WSUSDir
-    
+
     # Import WsusConfiguration
     wsus_import $exportfile
-    
+
     # Write import timestamp to lastimport
     store_timestamp $lastimport
 }

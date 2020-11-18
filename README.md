@@ -27,14 +27,20 @@ WSUS database maintenance script. The script has three modes
 
     # Reindex, run the built-in WSUS maintenance jobs and delete declined updates
     wsus-maintenance.ps1 -Full
-    
+
 ## Scheduling recommendations
 Create a daily task that runs these actions
 1. wsus-approve.ps1
 2. wsus-maintenance.ps1
 
-Create a monthly task that runs this action
+Create a monthly task that runs these actions
 1. wsus-maintenance.ps1 -Full
+2. wsus-approve.ps1
+3. wsus-maintenance.ps1
+
+By running sync/approve directly after full maintenance you minimize the period
+where WSUS is unaware of updates that was deleted from the database because
+they were not needed.
 
 # Offline WSUS sync
 ## wsus-sync

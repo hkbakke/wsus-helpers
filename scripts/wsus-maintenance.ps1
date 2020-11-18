@@ -10,9 +10,9 @@ param (
 )
 
 $sqlcmd = "C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn\SQLCMD.EXE"
-$CreateWsusIndexes = "D:\scripts\CreateWsusIndexes.sql"
-$WsusDBMaintenance = "D:\scripts\WsusDBMaintenance.sql"
-$logs = "D:\logs"
+$CreateWsusIndexes = "$PSScriptRoot\CreateWsusIndexes.sql"
+$WsusDBMaintenance = "$PSScriptRoot\WsusDBMaintenance.sql"
+$logs = "$PSScriptRoot\logs"
 
 # Delete declined updates from database. Note that updates still being matched by existing categories and languages
 # will reappear after the next sync. This is primarily useful to get rid of old updates when you have removed and
