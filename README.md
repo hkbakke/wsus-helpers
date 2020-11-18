@@ -46,8 +46,11 @@ they were not needed.
 ## wsus-sync
 File based sync to servers without direct internet connectivity
 
-## wsus-import
+## wsus-export
 Wrapper for wsus-sync to run wsus-approve automatically after wsus-sync import as it only makes sense to check for new updates after an import for offline servers
+
+## wsus-import
+Wrapper for wsus-sync to run wsus-approve automatically after wsus-sync import as it only makes sense to check for new updates after an import for offline servers.
 
 # Credits
 * CreateWsusIndexes.sql: https://support.microsoft.com/en-us/help/4490644/complete-guide-to-microsoft-wsus-and-configuration-manager-sup-maint

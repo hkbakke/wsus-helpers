@@ -6,6 +6,7 @@ param (
 
 $wsusutil = "C:\Program Files\Update Services\Tools\WsusUtil.exe"
 $exportfile = "$WSUSDir\export.xml.gz"
+$maintenance = "$PSScriptRoot\wsus-maintenance.ps1"
 
 [reflection.assembly]::LoadWithPartialName("Microsoft.UpdateServices.Administration") | Out-Null
 $wsus = [Microsoft.UpdateServices.Administration.AdminProxy]::GetUpdateServer("localhost", $false, 8530)
@@ -136,6 +137,10 @@ if ($Mode -eq "export") {
 
     # Cancel any currently running downloads, as the import will provide the WSUS content
     $wsus.CancelAllDownloads()
+
+    # Run full maintenance to clean out old stuff only just before import, to shorten the period
+    # where there are updates that WSUS does not know about.
+    & $maintenance -Full
 
     # Sync syncdir to WSUS content dir
     import_sync $SyncDir $WSUSDir
