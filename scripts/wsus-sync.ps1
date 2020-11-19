@@ -7,20 +7,26 @@ param (
 $wsusutil = "C:\Program Files\Update Services\Tools\WsusUtil.exe"
 $exportfile = "$WSUSDir\export.xml.gz"
 $maintenance = "$PSScriptRoot\wsus-maintenance.ps1"
+$logdir = "$PSScriptRoot\logs\"
+$logfile = "$logdir\wsus-sync.log"
+$export_log = "$logdir\wsus-export.log"
+$import_log = "$logdir\wsus-import.log"
+$lastsync = "$SyncDir\lastsync"
+$syncing = "$SyncDir\syncing"
 
 [reflection.assembly]::LoadWithPartialName("Microsoft.UpdateServices.Administration") | Out-Null
 $wsus = [Microsoft.UpdateServices.Administration.AdminProxy]::GetUpdateServer("localhost", $false, 8530)
 $subscription = $wsus.GetSubscription()
 
-function output_log ($text) {
-    Write-Output $text | Out-File -Append $logfile
+function log ($text) {
+    Write-Output "$(get-date -format s): $text" | Tee-Object -Append $logfile
 }
 
 function create_dir ($directory) {
     if (-Not (Test-Path $directory)) {
         New-Item -Path $directory -ItemType directory | Out-Null
         if (-Not ($?)) {
-            output_log "ERROR: Could not create $directory"
+            log "ERROR: Could not create $directory"
             exit 1
         }
     }
@@ -31,16 +37,16 @@ function store_timestamp ($file) {
 }
 
 function wsus_export ($exportfile) {
-    & $wsusutil export $exportfile "$logdir\wsus_export.log"
+    & $wsusutil export $exportfile "$export_log"
     if (-Not ($?)) {
-        exit $LASTEXITCODE
+        exit 1
     }
 }
 
 function wsus_import ($exportfile) {
-    & $wsusutil import $exportfile "$logdir\wsus_import.log"
+    & $wsusutil import $exportfile "$import_log"
     if (-Not ($?)) {
-        exit $LASTEXITCODE
+        exit 1
     }
 }
 
@@ -63,14 +69,6 @@ function import_sync ($src, $dst) {
 }
 
 
-#
-# Run
-#
-
-$logdir = "$PSScriptRoot\logs\"
-$logfile = "$logdir\file_sync.log"
-$lastsync = "$SyncDir\lastsync"
-$syncing = "$SyncDir\syncing"
 
 create_dir $logdir
 
@@ -84,13 +82,13 @@ if ($Mode -eq "export") {
     # while an export is ongoing
     Write-Output "Sync started at $(Get-Date -Format s)" | Out-File $syncing
     if ($LASTEXITCODE -gt 0) {
-        output_log "Could not write syncing file $syncing"
+        log "Could not write syncing file $syncing"
         exit $LASTEXITCODE
     }
 
     # Wait for any currently running synchronization jobs to finish before continuing
     while ($subscription.GetSynchronizationStatus() -ne "NotProcessing") {
-        output_log "Waiting for synchronization to finish..."
+        log "Waiting for synchronization to finish..."
         Start-Sleep -s 10
     }
 
@@ -98,11 +96,12 @@ if ($Mode -eq "export") {
     while ($wsus.GetContentDownloadProgress().TotalBytesToDownload -gt 0) {
         $total = $wsus.GetContentDownloadProgress().TotalBytesToDownload
         $downloaded = $wsus.GetContentDownloadProgress().DownloadedBytes
-        output_log "Waiting for downloads to finish. Progress: $([math]::Round($downloaded / $total * 100))%"
+        log "Waiting for downloads to finish. Progress: $([math]::Round($downloaded / $total * 100))%"
         Start-Sleep -s 10
     }
 
     # Export Wsus database
+    log "Starting WSUS export"
     wsus_export $exportfile
 
     # Sync WSUS content to syncdir
@@ -115,12 +114,12 @@ if ($Mode -eq "export") {
     store_timestamp $lastsync
 } elseif ($Mode -eq "import") {
     if (Test-Path $syncing) {
-        output_log "An export is currently ongoing. Exiting..."
+        log "An export is currently ongoing. Exiting..."
         exit 3
     }
 
     if (-Not (Test-Path $lastsync)) {
-        output_log "$lastsync not found"
+        log "$lastsync not found"
         exit 1
     }
 
@@ -130,7 +129,7 @@ if ($Mode -eq "export") {
     if (Test-Path $lastimport) {
         $lastimport_time = Get-Date -Date $(Get-Content $lastimport)
         if ($lastimport_time -ge $lastsync_time) {
-            output_log "Incoming sync timestamp must be newer than the previous import timestamp"
+            log "Incoming sync timestamp must be newer than the previous import timestamp"
             exit 2
         }
     }
@@ -146,6 +145,7 @@ if ($Mode -eq "export") {
     import_sync $SyncDir $WSUSDir
 
     # Import WsusConfiguration
+     og "Starting WSUS export"
     wsus_import $exportfile
 
     # Write import timestamp to lastimport

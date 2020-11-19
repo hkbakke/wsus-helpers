@@ -6,21 +6,16 @@ param (
 )
 
 & $WsusMaintenance -Full
-if ($LASTEXITCODE -ne 0) {
-    exit $LASTEXITCODE
+if (-Not ($?)) {
+    exit 1
 }
 
 & $WsusApprove
-if ($LASTEXITCODE -ne 0) {
-    exit $LASTEXITCODE
-}
-
-& $WsusMaintenance
-if ($LASTEXITCODE -ne 0) {
-    exit $LASTEXITCODE
+if (-Not ($?)) {
+    exit 1
 }
 
 & $WsusSync -Mode export -SyncDir $SyncDir
-if ($LASTEXITCODE -ne 0) {
-    exit $LASTEXITCODE
+if (-Not ($?)) {
+    exit 1
 }
