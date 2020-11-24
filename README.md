@@ -25,22 +25,21 @@ WSUS database maintenance script. The script has three modes
     # Reindex. Run after every sync and maintenance
     wsus-maintenance.ps1
 
-    # Reindex, run the built-in WSUS maintenance jobs and delete declined updates
+    # Reindex, run the built-in WSUS maintenance jobs
     wsus-maintenance.ps1 -Full
+
+    # Delete all decline updates from both the database and the disk. This will
+    # cause the next sync to be very slow. Mainly for cleaning up deselected
+    # updates when removing a language etc. Should be used sparingly.
+    wsus-maintenance.ps1 -DeleteDeclined
 
 ## Scheduling recommendations
 Create a daily task that runs these actions
 1. wsus-approve.ps1
 2. wsus-maintenance.ps1
 
-Create a monthly task that runs these actions
+Create a monthly task that runs this action
 1. wsus-maintenance.ps1 -Full
-2. wsus-approve.ps1
-3. wsus-maintenance.ps1
-
-By running sync/approve directly after full maintenance you minimize the period
-where WSUS is unaware of updates that was deleted from the database because
-they were not needed.
 
 # Offline WSUS sync
 ## wsus-sync
