@@ -6,7 +6,6 @@ param (
 
 $wsusutil = "C:\Program Files\Update Services\Tools\WsusUtil.exe"
 $exportfile = "$WSUSDir\export.xml.gz"
-$maintenance = "$PSScriptRoot\wsus-maintenance.ps1"
 $logdir = "$PSScriptRoot\logs\"
 $logfile = "$logdir\wsus-sync.log"
 $export_log = "$logdir\wsus-export.log"
@@ -98,9 +97,12 @@ if ($Mode -eq "export") {
     # Export Wsus database
     log "Starting WSUS export"
     wsus_export $exportfile
+    log "WSUS export finished"
 
     # Sync WSUS content to syncdir
+    log "Syncing WSUS content files to $SyncDir"
     export_sync $WSUSDir $SyncDir
+    log "Finished syncing content"
 
     # Clear syncing file
     Remove-Item $syncing
@@ -130,18 +132,18 @@ if ($Mode -eq "export") {
     }
 
     # Cancel any currently running downloads, as the import will provide the WSUS content
+    log "Cancelling any existing downloads"
     $wsus.CancelAllDownloads()
 
-    # Run full maintenance to clean out old stuff only just before import, to shorten the period
-    # where there are updates that WSUS does not know about.
-    & $maintenance -Full
-
     # Sync syncdir to WSUS content dir
+    log "Syncing WSUS content files from $SyncDir"
     import_sync $SyncDir $WSUSDir
+    log "Finished syncing content"
 
     # Import WsusConfiguration
-    log "Starting WSUS export"
+    log "Starting WSUS import"
     wsus_import $exportfile
+    log "WSUS import finished"
 
     # Write import timestamp to lastimport
     store_timestamp $lastimport

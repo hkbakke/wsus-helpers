@@ -36,6 +36,8 @@ if (Test-Path $logfile) {
 [reflection.assembly]::LoadWithPartialName("Microsoft.UpdateServices.Administration") | Out-Null
 $wsus = [Microsoft.UpdateServices.Administration.AdminProxy]::GetUpdateServer($WsusServer, $UseSSL, $Port)
 
+log "Starting WSUS maintenance"
+
 if ($Init) {
     # Create a couple of WSUS indexes to speed things up. Nothing happens if you run this
     # every time, but you'll get an error saying that an index already exists
@@ -63,7 +65,6 @@ if ($DeleteDeclined) {
 
 # Run WSUS maintenance jobs
 if ($Full) {
-    log "Starting full maintenance"
     log "Running WSUS cleanup jobs"
     $cleanupScope = new-object Microsoft.UpdateServices.Administration.CleanupScope
     $cleanupScope.DeclineSupersededUpdates = $true
@@ -75,13 +76,14 @@ if ($Full) {
     $cleanupScope.CleanupLocalPublishedContentFiles = $true
     $cleanupManager = $wsus.GetCleanupManager()
     $cleanupManager.PerformCleanup($cleanupScope) | Out-File "$logdir\wsus-cleanup.log"
-    log "Full maintenance complete"
 }
 
 # Reindex WSUS DB
+log "Reindexing WSUS database"
 & $sqlcmd -S np:\\.\pipe\MICROSOFT##WID\tsql\query -i $WsusDBMaintenance -I -o "$logdir\wsus-reindex.log"
 if (-Not ($?)) {
     log "ERROR: WSUS database reindex failed"
     exit 1
 }
 log "WSUS database reindex complete"
+log "WSUS maintenance complete"
