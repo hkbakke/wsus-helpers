@@ -16,7 +16,6 @@ $syncing = "$SyncDir\syncing"
 
 [reflection.assembly]::LoadWithPartialName("Microsoft.UpdateServices.Administration") | Out-Null
 $wsus = [Microsoft.UpdateServices.Administration.AdminProxy]::GetUpdateServer("localhost", $false, 8530)
-$subscription = $wsus.GetSubscription()
 
 function log ($text) {
     Write-Output "$(get-date -format s): $text" | Tee-Object -Append $logfile
@@ -86,18 +85,14 @@ if ($Mode -eq "export") {
         exit $LASTEXITCODE
     }
 
-    # Wait for any currently running synchronization jobs to finish before continuing
-    while ($subscription.GetSynchronizationStatus() -ne "NotProcessing") {
-        log "Waiting for synchronization to finish..."
-        Start-Sleep -s 10
-    }
-
     # Wait for any currently running downloads to complete before continuing
-    while ($wsus.GetContentDownloadProgress().TotalBytesToDownload -gt 0) {
-        $total = $wsus.GetContentDownloadProgress().TotalBytesToDownload
-        $downloaded = $wsus.GetContentDownloadProgress().DownloadedBytes
+    $total = $wsus.GetContentDownloadProgress().TotalBytesToDownload
+    $downloaded = $wsus.GetContentDownloadProgress().DownloadedBytes
+    while ($downloaded -lt $total) {
         log "Waiting for downloads to finish. Progress: $([math]::Round($downloaded / $total * 100))%"
         Start-Sleep -s 10
+        $total = $wsus.GetContentDownloadProgress().TotalBytesToDownload
+        $downloaded = $wsus.GetContentDownloadProgress().DownloadedBytes
     }
 
     # Export Wsus database
@@ -145,7 +140,7 @@ if ($Mode -eq "export") {
     import_sync $SyncDir $WSUSDir
 
     # Import WsusConfiguration
-     og "Starting WSUS export"
+    log "Starting WSUS export"
     wsus_import $exportfile
 
     # Write import timestamp to lastimport

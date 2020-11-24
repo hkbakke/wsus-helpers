@@ -5,12 +5,12 @@ param (
     [string]$WsusMaintenance = "$PSScriptRoot\wsus-maintenance.ps1"
 )
 
-& $WsusMaintenance -Full
+& $WsusApprove
 if (-Not ($?)) {
     exit 1
 }
 
-& $WsusApprove
+& $WsusMaintenance -Full
 if (-Not ($?)) {
     exit 1
 }

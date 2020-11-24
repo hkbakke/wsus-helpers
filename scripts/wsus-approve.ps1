@@ -7,7 +7,6 @@ param (
     [switch]$NoSync,
     [switch]$Reset,
     [switch]$DryRun,
-    [string]$WsusMaintenance = "$PSScriptRoot\wsus-maintenance.ps1",
     [bool]$DeclineIA64 = $true,
     [bool]$DeclineARM64 = $true,
     [bool]$DeclineX86 = $true,
@@ -32,19 +31,40 @@ $approve_classifications = @(
 )
 $approve_group = "All Computers"
 
+
+[reflection.assembly]::LoadWithPartialName("Microsoft.UpdateServices.Administration") | Out-Null
+$wsus = [Microsoft.UpdateServices.Administration.AdminProxy]::GetUpdateServer($WsusServer, $UseSSL, $Port)
+$group = $wsus.GetComputerTargetGroups() | Where-Object {$_.Name -eq $approve_group}
+$subscription = $wsus.GetSubscription()
+$update_categories = $subscription.GetUpdateCategories()
+$update_classifications = $subscription.GetUpdateClassifications()
+
+
 function log ($text) {
     Write-Output "$(get-date -format s): $text" | Tee-Object -Append $logfile
+}
+
+function is_selected ($update) {
+    #
+    # Is there any way to check update against language list in here?
+    #
+    if ($update.UpdateClassificationTitle -in $update_classifications.Title) {
+        return $true
+    }
+
+    Foreach ($product in $update.ProductTitles) {
+        if ($product -in $update_categories.Title) {
+	        return $true
+        }
+    }
+
+    return $false
 }
 
 # Reset logfile
 if (Test-Path $logfile) {
     Remove-Item $logfile
 }
-
-[reflection.assembly]::LoadWithPartialName("Microsoft.UpdateServices.Administration") | Out-Null
-$wsus = [Microsoft.UpdateServices.Administration.AdminProxy]::GetUpdateServer($WsusServer, $UseSSL, $Port)
-$group = $wsus.GetComputerTargetGroups() | Where-Object {$_.Name -eq $approve_group}
-$subscription = $wsus.GetSubscription()
 
 if (-not $NoSync) {
     if ($subscription.GetSynchronizationStatus() -eq "NotProcessing") {
@@ -57,6 +77,15 @@ if (-not $NoSync) {
 while ($subscription.GetSynchronizationStatus() -ne "NotProcessing") {
     log "Waiting for synchronization to finish..."
     Start-Sleep -s 10
+}
+
+# Start by removing deselected updates as there is no need to do further processing on them
+log "Checking for deselected updates"
+$wsus.GetUpdates() | Foreach-Object {
+    if (-Not (is_selected $_)) {
+        log "Deleting deselected update: $($_.Title)"
+        if (-not $DryRun) { $wsus.DeleteUpdate($_.Id.UpdateId) }
+    }
 }
 
 if ($Reset) {
@@ -113,11 +142,3 @@ $updates | Foreach-Object {
         if (-not $DryRun) { $_.Decline() }
     }
 }
-
-log "Starting WSUS maintenance script $WsusMaintenance"
-& $WsusMaintenance
-if (-Not ($?)) {
-    log "ERROR: WSUS maintenance script failed"
-    exit 1
-}
-log "Finished WSUS maintenance"
