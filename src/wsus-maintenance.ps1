@@ -18,12 +18,6 @@ $logfile = "$logdir\wsus-maintenance.log"
 $dbmaint_log = "$logdir\WsusDBMaintenance.log"
 
 
-function Check-Sync {
-    if ($subscription.GetSynchronizationStatus() -ne "NotProcessing") {
-        throw "WSUS is synchronizing"
-    }
-}
-
 function log ($text) {
     Write-Output "$(get-date -format s): $text" | Tee-Object -Append $logfile
 }
@@ -41,7 +35,6 @@ log "Starting WSUS maintenance"
 if ($Init) {
     # Create a couple of WSUS indexes to speed things up. Nothing happens if you run this
     # every time, but you'll get an error saying that an index already exists
-    Check-Sync
     log "Creating WSUS database indexes"
     & $sqlcmd -S np:\\.\pipe\MICROSOFT##WID\tsql\query -i $CreateWsusIndexes -I -o "$logdir\wsus-init-indexes.log"
     if (-Not ($?)) {
