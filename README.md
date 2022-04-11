@@ -46,7 +46,7 @@ Create a monthly task that runs this action
 File based sync to servers without direct internet connectivity
 
 ## wsus-export
-Wrapper for wsus-sync to run wsus-approve automatically after wsus-sync import as it only makes sense to check for new updates after an import for offline servers
+Wrapper for wsus-sync to ensure everything is updated before exporting the content
 
 ## wsus-import
 Wrapper for wsus-sync to run wsus-approve automatically after wsus-sync import as it only makes sense to check for new updates after an import for offline servers.
